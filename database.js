@@ -14,7 +14,8 @@ function coinPriceAPI(coinA, coinB) {
       var prettyCoinA = result.coin1,
           prettyCoinB = result.coin2,
           price = result.markets[0].price;
-      resolve(prettyCoinA, prettyCoinB, price);
+      console.log('coinPriceAPI', prettyCoinA, prettyCoinB, price);
+      resolve([prettyCoinA, prettyCoinB, price]);
     };
     request.get(url, data, cb);
   })
@@ -53,7 +54,8 @@ function isExpired(entry) {
 function updateEntry(expired, coinA, coinB, ent) {
   return new Promise((resolve, reject) => {
     console.log('inside updateEntry. expired = ', expired, ent);
-    if (expired) {
+    // if (expired) {
+    if (true) {
       console.log('if yes');
 
       var update = (coinA, coinB, price) => {
@@ -61,19 +63,21 @@ function updateEntry(expired, coinA, coinB, ent) {
           var item = {
             TableName: 'cointrack_cache',
             Item: {
-              prices: "BTC_USD",
-              value: 710.01028,
+              prices: coinA + '_' + coinB,
+              value: price,
               time: Date.now()
             }
           }
-          dynamodb.put(item, (err, data) => resolve(data) );
+          dynamodb.put(item, (err, data) => resolve(item));
         })
       }
 
       // get API info, then update DB
       coinPriceAPI(coinA, coinB)
-      .then((prettyCoinA, prettyCoinB, price) => update(coinA, coinB, price))
-      .then(f => resolve(f))
+      .then(metadata => update(metadata[0], metadata[1], metadata[2]))
+      .then(f => {
+        console.log('f', f);
+        resolve(f)})
     } else {
       // return with same data
       console.log('if no', ent);
