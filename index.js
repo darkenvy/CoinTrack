@@ -9,8 +9,8 @@
  */
 var APP_ID = undefined; //OPTIONAL: replace with "amzn1.echo-sdk-ams.app.[your-unique-value-here]";
 var AlexaSkill = require('./AlexaSkill');
-var request = require('request');
 var AWS = require("aws-sdk");
+var db = require('./database');
 // var dynamodb = new AWS.DynamoDB();
 var dynamodb = new AWS.DynamoDB.DocumentClient();
 var Fact = function () {
@@ -110,56 +110,42 @@ function orientation(response, prettyCoinA, prettyCoinB, price) {
   }
 }
 
-function getCoinPrice(response, coinA, coinB) {
-  // http://api.cryptocoincharts.info/tradingPair/BTC_USD
-  var url = 'http://api.cryptocoincharts.info/tradingPair/' + coinA + '_' + coinB;
-  var data = {};
-  var cb = function(err, res, body) {
-    if (err) {response.tell("Error: " + err); return;}
-    var result = JSON.parse(body);
-    var prettyCoinA = result.coin1,
-        prettyCoinB = result.coin2,
-        price = result.markets[0].price;
-    orientation(response, prettyCoinA, prettyCoinB, price);
-  };
-  request.get(url, data, cb);
-}
-
 
 function evalStatement(response, intent) {
   
-  // CREATE ITEM
-  var putDBItem = {
-    TableName: 'cointrack_cache',
-    Item: {
-      prices: "BTC_USD",
-      value: 710.01028,
-      time: Date.now()
-    }
-  }
+  // // CREATE ITEM
+  // var putDBItem = {
+  //   TableName: 'cointrack_cache',
+  //   Item: {
+  //     prices: "BTC_USD",
+  //     value: 710.01028,
+  //     time: Date.now()
+  //   }
+  // }
   
-  var putDBCB = function (err, data) {
-    response.tell("woohoo " + JSON.stringify(data) + ". error? " + JSON.stringify(err))
-  };
+  // var putDBCB = function (err, data) {
+  //   response.tell("woohoo " + JSON.stringify(data) + ". error? " + JSON.stringify(err))
+  // };
 
 
 
 
-  // GET ITEM
-  var getDBItem = {
-    TableName : 'cointrack_cache',
-    Key: {
-       prices: "BTC_USD"
-    }
-  }
-  var getDBCB = function (err, data) {
-    response.tell("woohoo " + JSON.stringify(data) + ". error? " + JSON.stringify(err))
-  };
+  // // GET ITEM
+  // var getDBItem = {
+  //   TableName : 'cointrack_cache',
+  //   Key: {
+  //      prices: "BTC_USD"
+  //   }
+  // }
+  // var getDBCB = function (err, data) {
+  //   response.tell("woohoo " + JSON.stringify(data) + ". error? " + JSON.stringify(err))
+  // };
 
-  // dynamodb.put(putDBItem, putDBCB);
-  dynamodb.get(getDBItem, getDBCB);
+  // // dynamodb.put(putDBItem, putDBCB);
+  // dynamodb.get(getDBItem, getDBCB);
 
-
+  db.retrieve('BTC', 'USD')
+    .then(entry => console.log('entry: ', entry))
 
 
   // var coinA = intent.slots.CoinA;
