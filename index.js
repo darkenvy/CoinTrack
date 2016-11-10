@@ -104,10 +104,10 @@ function prettifyNumber(number) {
 function orientation(prettyCoinA, prettyCoinB, price) {
   // price is for the prettyCoinB 
   // Flip the price if the number is bigger the other way. 
-  console.log('inside orientation');
+  console.log('inside orientation', price);
   var comparison = parseInt(1/parseFloat(price));
   console.log('inside orientation 2');
-  if (comparison > price) {
+  if (comparison > price && comparison > 1) {
     console.log('inside orientation 3');
     return 'Let me phrase it this way: One ' + prettyCoinB + ' is worth ' + comparison + ' ' + prettyCoinA + 's';
   } else {
@@ -153,12 +153,26 @@ function evalStatement(response, intent) {
     console.log('2');
     var phrase = prefixUtterence + orientation(prettyCoinA, prettyCoinB, prettyNumber);
     
+    // ----------------- Error Handling ------------------- //
+
     // If the number is -1, that means the API returned null. Meaning no exchange
     if (parseInt(prettyNumber) == -1) {
       phrase = 'Unfortunately I do not have an exchange for ' + prettyCoinA + 
         ' to ' + prettyCoinB + '. I could estimate, however cryptocurrency is hardly ever at equilibrium'
     }
-    console.log('3');
+
+    if (parseInt(prettyNumber) == -2) {
+      phrase = prettNumber + 'I am having trouble calling out to the API for prices. If this continues, please contact the developer.'
+    }
+
+    // There us no errors on the database catches yet because I'de have to carry
+    // a response from deep inside promises
+    // if (parseInt(prettyNumber) == -3) {
+    //   phrase = 'I am having difficulty connecting to my database. If this continues, please contact the developer.'
+    // }
+
+    
+    // --------------------- Response --------------------- //
     response.tell(phrase);
   })
 

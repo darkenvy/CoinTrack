@@ -6,20 +6,28 @@ var dynamodb = new AWS.DynamoDB.DocumentClient();
 // ---------------------- API ------------------------- //
 function coinPriceAPI(coinA, coinB) {
   return new Promise((resolve, reject) => {
-    // http://api.cryptocoincharts.info/tradingPair/BTC_USD
     var url = 'http://api.cryptocoincharts.info/tradingPair/' + coinA + '_' + coinB;
     var data = {};
     console.log('inside coinpriceapi ', coinA, coinB);
     var cb = function(err, res, body) {
-      console.log('aint no callaback girl');
       var result = JSON.parse(body);
-      var prettyCoinA = result.coin1,
-          prettyCoinB = result.coin2,
-          price = 0;
-      if (result.markets.length > 0) {
-        price = result.markets[0].price;
+      console.log('aint no callaback girl');
+
+      // Full out error. No object returned
+      if (result === undefined || Object.keys(result).length == 0) {
+        var prettyCoinA = '',
+            prettyCoinB = '',
+            price = -2;
       } else {
-        price = -1;    
+        var prettyCoinA = result.coin1,
+            prettyCoinB = result.coin2,
+            price = 0;
+        // Semi-error. The coin just has no trade value
+        if (result.markets.length > 0) {
+          price = result.markets[0].price;
+        } else {
+          price = -1;
+        }
       }
       console.log('coinPriceAPI', prettyCoinA, prettyCoinB, price);
       resolve([coinA, coinB, price]);
