@@ -82,8 +82,14 @@ var codeToSlot = {
   'XPM': 'primecoin'
 }
 
+
+
 function prettifyNumber(number) {
-  if (number < 1) {
+  if (number < 0.01) {
+    return parseFloat(number).toFixed(5);
+  } else if (number < 0.1) {
+    return parseFloat(number).toFixed(4);
+  } else if (number < 1) {
     return parseFloat(number).toFixed(3);
   } else if (number < 10) {
     return parseFloat(number).toFixed(2);
@@ -95,13 +101,18 @@ function prettifyNumber(number) {
 }
 
 
-function orientation(response, prettyCoinA, prettyCoinB, price) {
+function orientation(prettyCoinA, prettyCoinB, price) {
   // price is for the prettyCoinB 
-  // if the price is less than one 'cent' (1/100 : 0.01) then flip orientation
-  if (price < 0.01) {
-    response.tell('Let me rephrase it this way: One ' + prettyCoinB + ' is worth ' + (1/parseFloat(price)).toFixed(1) + ' ' + prettyCoinA + 's');
+  // Flip the price if the number is bigger the other way. 
+  console.log('inside orientation');
+  var comparison = parseInt(1/parseFloat(price));
+  console.log('inside orientation 2');
+  if (comparison > price) {
+    console.log('inside orientation 3');
+    return 'Let me phrase it this way: One ' + prettyCoinB + ' is worth ' + comparison + ' ' + prettyCoinA + 's';
   } else {
-    response.tell('One ' + prettyCoinA + ' is worth '  + parseFloat(price).toFixed(1) + ' ' + prettyCoinB + 's');
+    console.log('inside orientation 4');
+    return 'The price of one ' + prettyCoinA + ' is ' + price + ' ' + prettyCoinB + 's';
   }
 }
 
@@ -134,13 +145,20 @@ function evalStatement(response, intent) {
   // Get prices from database and/or API. It is abstracted.
   db.retrieve(coinA, coinB)
   .then(entry => {
+    console.log('1');
     var split = entry.Item.prices.split('_');
     var prettyCoinA = codeToSlot[split[0]];
     var prettyCoinB = codeToSlot[split[1]];
     var prettyNumber = prettifyNumber(entry.Item.value);
-    var phrase = 'The price of one ' + prettyCoinA + 
-                 ' is ' + prettyNumber + 
-                 ' ' + prettyCoinB + 's';
+    console.log('2');
+    var phrase = prefixUtterence + orientation(prettyCoinA, prettyCoinB, prettyNumber);
+    
+    // If the number is -1, that means the API returned null. Meaning no exchange
+    if (parseInt(prettyNumber) == -1) {
+      phrase = 'Unfortunately I do not have an exchange for ' + prettyCoinA + 
+        ' to ' + prettyCoinB + '. I could estimate, however cryptocurrency is hardly ever at equilibrium'
+    }
+    console.log('3');
     response.tell(phrase);
   })
 

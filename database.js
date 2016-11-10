@@ -11,10 +11,16 @@ function coinPriceAPI(coinA, coinB) {
     var data = {};
     console.log('inside coinpriceapi ', coinA, coinB);
     var cb = function(err, res, body) {
+      console.log('aint no callaback girl');
       var result = JSON.parse(body);
       var prettyCoinA = result.coin1,
           prettyCoinB = result.coin2,
-          price = result.markets[0].price;
+          price = 0;
+      if (result.markets.length > 0) {
+        price = result.markets[0].price;
+      } else {
+        price = -1;    
+      }
       console.log('coinPriceAPI', prettyCoinA, prettyCoinB, price);
       resolve([coinA, coinB, price]);
     };
@@ -55,6 +61,7 @@ function isExpired(entry) {
 function updateEntry(expired, coinA, coinB, ent) {
   return new Promise((resolve, reject) => {
     console.log('inside updateEntry. expired = ', expired, ent);
+    // if (true) {
     if (expired) {
       console.log('if yes');
 
