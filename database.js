@@ -9,6 +9,7 @@ function coinPriceAPI(coinA, coinB) {
     // http://api.cryptocoincharts.info/tradingPair/BTC_USD
     var url = 'http://api.cryptocoincharts.info/tradingPair/' + coinA + '_' + coinB;
     var data = {};
+    console.log('inside coinpriceapi ', coinA, coinB);
     var cb = function(err, res, body) {
       var result = JSON.parse(body);
       var prettyCoinA = result.coin1,
@@ -27,7 +28,7 @@ function checkDatabase(coinA, coinB) {
     var item = {
       TableName : 'cointrack_cache',
       Key: {
-         prices: "BTC_USD"
+         prices: coinA + '_' + coinB
       }
     }
     dynamodb.get(item, (err, data) => resolve(data) );
@@ -58,6 +59,7 @@ function updateEntry(expired, coinA, coinB, ent) {
       console.log('if yes');
 
       var update = (coinA, coinB, price) => {
+        console.log('inside update');
         return new Promise((resolve, reject) => {
           var item = {
             TableName: 'cointrack_cache',
@@ -77,6 +79,7 @@ function updateEntry(expired, coinA, coinB, ent) {
       .then(f => resolve(f))
     } else {
       // return with same data
+      console.log('resolving ent');
       resolve(ent);
     }
   })
@@ -90,9 +93,10 @@ var db = {
     return new Promise((resolve, reject) => {
       checkDatabase(coinA, coinB)
       .then(entry => isExpired(entry))
-      .then(expiredData => resolve( 
-        updateEntry(expiredData[0], coinA, coinB, expiredData[1]) 
-      ))
+      .then(expiredData => {
+        console.log('HERE:: ', coinA, coinB);
+        resolve(updateEntry(expiredData[0], coinA, coinB, expiredData[1]) )
+      })
     })
 
   }

@@ -55,50 +55,6 @@ Fact.prototype.intentHandlers = {
 
 // ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– //
 
-// function slotToCode(coinUtterance) {
-//   // converts utterance of coin into the quick find code of the coin.
-//   // "Bitcoin" -> "BTC"
-//   var code = 'BTC';
-//   switch (coinUtterance.toLowerCase()) {
-//     case 'us dollar':
-//       code = 'USD';
-//       break;
-//     case 'dollar':
-//       code = 'USD';
-//       break;
-//     case 'bitcoin':
-//       code = 'BTC';
-//       break;
-//     case 'coin':
-//       code = 'BTC';
-//       break;
-//     case 'litecoin':
-//       code = 'LTC';
-//       break;
-//     case 'ethereum':
-//       code = 'ETH';
-//       break;
-//     case 'ethereum classic':
-//       code = 'ETC';
-//       break;
-//     case 'monero':
-//       code = 'XMR';
-//       break;
-//     case 'quark':
-//       code = 'QRK';
-//       break;
-//     case 'vertcoin':
-//       code = 'VTC';
-//       break;
-//     case 'primecoin':
-//       code = 'XPM';
-//       break;
-//     default:
-//       code = 'BTC';
-//       break;
-//   }
-//   return code;
-// }
 
 var slotToCode = {
   'us dollar': 'USD',
@@ -126,6 +82,18 @@ var codeToSlot = {
   'XPM': 'primecoin'
 }
 
+function prettifyNumber(number) {
+  if (number < 1) {
+    return parseFloat(number).toFixed(3);
+  } else if (number < 10) {
+    return parseFloat(number).toFixed(2);
+  } else if (number < 500) {
+    return parseFloat(number).toFixed(1);
+  } else if (number >= 500) {
+    return parseInt(number);
+  }
+}
+
 
 function orientation(response, prettyCoinA, prettyCoinB, price) {
   // price is for the prettyCoinB 
@@ -139,7 +107,60 @@ function orientation(response, prettyCoinA, prettyCoinB, price) {
 
 
 function evalStatement(response, intent) {
-  
+  var coinA = intent.slots.CoinA;
+  var coinB = intent.slots.CoinB;
+  var prefixUtterence = '';
+  console.log('+++slots:', coinA, coinB);
+
+  // Verify each coin is declared
+  if (('value' in coinB) && ('value' in coinA)) { // A & B
+    coinA = slotToCode[coinA.value];
+    coinB = slotToCode[coinB.value];
+  } else if ('value' in coinB) { // only B
+    coinA = slotToCode[coinB.value];
+    coinB = 'USD';
+  } else if ('value' in coinA) { // only A
+    coinA = slotToCode[coinA.value];
+    coinB = 'USD';
+  } else { // None
+    coinA = 'BTC'
+    coinB = 'USD';
+    prefixUtterence = 'Did you mean Bitcoin to US Dollars? ';
+  }
+  // Failsafe to make sure coinA and coinB is not undefined.
+  coinA === undefined ? coinA = 'BTC' : false;
+  coinB === undefined ? coinA = 'USD' : false;
+
+  // Get prices from database and/or API. It is abstracted.
+  db.retrieve(coinA, coinB)
+  .then(entry => {
+    var split = entry.Item.prices.split('_');
+    var prettyCoinA = codeToSlot[split[0]];
+    var prettyCoinB = codeToSlot[split[1]];
+    var prettyNumber = prettifyNumber(entry.Item.value);
+    var phrase = 'The price of one ' + prettyCoinA + 
+                 ' is ' + prettyNumber + 
+                 ' ' + prettyCoinB + 's';
+    response.tell(phrase);
+  })
+
+}
+
+
+// ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– //
+
+// Create the handler that responds to the Alexa Request.
+exports.handler = function (event, context) {
+  // Create an instance of the SpaceGeek skill.
+  var fact = new Fact();
+  fact.execute(event, context);
+};
+
+
+
+
+
+
   // // CREATE ITEM
   // var putDBItem = {
   //   TableName: 'cointrack_cache',
@@ -170,38 +191,3 @@ function evalStatement(response, intent) {
 
   // // dynamodb.put(putDBItem, putDBCB);
   // dynamodb.get(getDBItem, getDBCB);
-
-  db.retrieve('BTC', 'USD')
-  .then(entry => {
-    var split = entry.Item.prices.split('_');
-    var prettyCoinA = codeToSlot[split[0]],
-        prettyCoinB = codeToSlot[split[1]];
-    response.tell('The price of one ' + prettyCoinA + ' is ' + entry.Item.value + ' ' + prettyCoinB + 's')
-  })
-
-
-  // var coinA = intent.slots.CoinA;
-  // var coinB = intent.slots.CoinB;
-  // console.log('+++slots:', coinA, coinB);
-  
-  // if (('value' in coinB) && ('value' in coinA)) { // A & B
-  //   getCoinPrice(response, slotToCode(coinA.value), slotToCode(coinB.value));
-  // } else if ('value' in coinB) { // only B
-  //   getCoinPrice(response, slotToCode(coinB.value), 'USD');
-  // } else if ('value' in coinA) { // only A
-  //   getCoinPrice(response, slotToCode(coinA.value), 'USD');
-  // } else { // None
-  //   response.tell("This will be help: no coinB or coinA");
-  // }
-}
-
-
-// ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– //
-
-// Create the handler that responds to the Alexa Request.
-exports.handler = function (event, context) {
-  // Create an instance of the SpaceGeek skill.
-  var fact = new Fact();
-  fact.execute(event, context);
-};
-
