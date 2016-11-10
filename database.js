@@ -15,7 +15,7 @@ function coinPriceAPI(coinA, coinB) {
           prettyCoinB = result.coin2,
           price = result.markets[0].price;
       console.log('coinPriceAPI', prettyCoinA, prettyCoinB, price);
-      resolve([prettyCoinA, prettyCoinB, price]);
+      resolve([coinA, coinB, price]);
     };
     request.get(url, data, cb);
   })
@@ -54,8 +54,7 @@ function isExpired(entry) {
 function updateEntry(expired, coinA, coinB, ent) {
   return new Promise((resolve, reject) => {
     console.log('inside updateEntry. expired = ', expired, ent);
-    // if (expired) {
-    if (true) {
+    if (expired) {
       console.log('if yes');
 
       var update = (coinA, coinB, price) => {
@@ -75,13 +74,10 @@ function updateEntry(expired, coinA, coinB, ent) {
       // get API info, then update DB
       coinPriceAPI(coinA, coinB)
       .then(metadata => update(metadata[0], metadata[1], metadata[2]))
-      .then(f => {
-        console.log('f', f);
-        resolve(f)})
+      .then(f => resolve(f))
     } else {
       // return with same data
-      console.log('if no', ent);
-      resolve(ent)
+      resolve(ent);
     }
   })
 

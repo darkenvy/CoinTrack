@@ -55,50 +55,77 @@ Fact.prototype.intentHandlers = {
 
 // ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– //
 
-function slotToCode(coinUtterance) {
-  // converts utterance of coin into the quick find code of the coin.
-  // "Bitcoin" -> "BTC"
-  var code = 'BTC';
-  switch (coinUtterance.toLowerCase()) {
-    case 'us dollar':
-      code = 'USD';
-      break;
-    case 'dollar':
-      code = 'USD';
-      break;
-    case 'bitcoin':
-      code = 'BTC';
-      break;
-    case 'coin':
-      code = 'BTC';
-      break;
-    case 'litecoin':
-      code = 'LTC';
-      break;
-    case 'ethereum':
-      code = 'ETH';
-      break;
-    case 'ethereum classic':
-      code = 'ETC';
-      break;
-    case 'monero':
-      code = 'XMR';
-      break;
-    case 'quark':
-      code = 'QRK';
-      break;
-    case 'vertcoin':
-      code = 'VTC';
-      break;
-    case 'primecoin':
-      code = 'XPM';
-      break;
-    default:
-      code = 'BTC';
-      break;
-  }
-  return code;
+// function slotToCode(coinUtterance) {
+//   // converts utterance of coin into the quick find code of the coin.
+//   // "Bitcoin" -> "BTC"
+//   var code = 'BTC';
+//   switch (coinUtterance.toLowerCase()) {
+//     case 'us dollar':
+//       code = 'USD';
+//       break;
+//     case 'dollar':
+//       code = 'USD';
+//       break;
+//     case 'bitcoin':
+//       code = 'BTC';
+//       break;
+//     case 'coin':
+//       code = 'BTC';
+//       break;
+//     case 'litecoin':
+//       code = 'LTC';
+//       break;
+//     case 'ethereum':
+//       code = 'ETH';
+//       break;
+//     case 'ethereum classic':
+//       code = 'ETC';
+//       break;
+//     case 'monero':
+//       code = 'XMR';
+//       break;
+//     case 'quark':
+//       code = 'QRK';
+//       break;
+//     case 'vertcoin':
+//       code = 'VTC';
+//       break;
+//     case 'primecoin':
+//       code = 'XPM';
+//       break;
+//     default:
+//       code = 'BTC';
+//       break;
+//   }
+//   return code;
+// }
+
+var slotToCode = {
+  'us dollar': 'USD',
+  'dollar': 'USD',
+  'bitcoin': 'BTC',
+  'coin': 'BTC',
+  'litecoin': 'LTC',
+  'ethereum': 'ETH',
+  'ethereum classic': 'ETC',
+  'monero': 'XMR',
+  'quark': 'QRK',
+  'vertcoin': 'VTC',
+  'primecoin': 'XPM'
 }
+
+var codeToSlot = {
+  'USD': 'dollar',
+  'BTC': 'bitcoin',
+  'LTC': 'litecoin',
+  'ETH': 'ethereum',
+  'ETC': 'ethereum classic',
+  'XMR': 'monero',
+  'QRK': 'quark',
+  'VTC': 'vertcoin',
+  'XPM': 'primecoin'
+}
+
 
 function orientation(response, prettyCoinA, prettyCoinB, price) {
   // price is for the prettyCoinB 
@@ -145,7 +172,12 @@ function evalStatement(response, intent) {
   // dynamodb.get(getDBItem, getDBCB);
 
   db.retrieve('BTC', 'USD')
-    .then(entry => console.log('entry: ', entry))
+  .then(entry => {
+    var split = entry.Item.prices.split('_');
+    var prettyCoinA = codeToSlot[split[0]],
+        prettyCoinB = codeToSlot[split[1]];
+    response.tell('The price of one ' + prettyCoinA + ' is ' + entry.Item.value + ' ' + prettyCoinB + 's')
+  })
 
 
   // var coinA = intent.slots.CoinA;
