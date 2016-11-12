@@ -24,7 +24,11 @@ Fact.prototype.eventHandlers.onSessionStarted = function (sessionStartedRequest,
   // any initialization logic goes here //console.log("onSessionStarted requestId: " + sessionStartedRequest.requestId + ", sessionId: " + session.sessionId);
 };
 Fact.prototype.eventHandlers.onLaunch = function (launchRequest, session, response) {
-  evalStatement(response); //console.log("onLaunch requestId: " + launchRequest.requestId + ", sessionId: " + session.sessionId);
+  if ("request" in response) {
+    evalStatement(response); //console.log("onLaunch requestId: " + launchRequest.requestId + ", sessionId: " + session.sessionId);
+  } else {
+    response.ask('What can I help you with? Say "Help" for example questions.')
+  }
 };
 
 // ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– //
@@ -41,7 +45,7 @@ Fact.prototype.intentHandlers = {
     evalStatement(response, intent);
   },
   "AMAZON.HelpIntent": function (intent, session, response) {
-    response.ask("You can say tell me a space fact, or, you can say exit... What can I help you with?", "What can I help you with?");
+    response.ask("You can ask me: \"What is the price of Bitcoin\", or \"How much is Litecoin worth in Bitcoin\". You can even ask me bluntly: \"Price of Etherium\"");
   },
   "AMAZON.StopIntent": function (intent, session, response) {
     var speechOutput = "Goodbye";
@@ -86,7 +90,7 @@ var codeToSlot = {
 
 function prettifyNumber(number) {
   if (number < 0.01) {
-    return parseFloat(number).toFixed(5);
+    return parseFloat(number);
   } else if (number < 0.1) {
     return parseFloat(number).toFixed(4);
   } else if (number < 1) {
@@ -106,9 +110,12 @@ function orientation(prettyCoinA, prettyCoinB, price) {
   // Flip the price if the number is bigger the other way. 
   console.log('inside orientation', price);
   var comparison = parseInt(1/parseFloat(price));
-  console.log('inside orientation 2');
-  if (comparison > price && comparison > 1) {
+  console.log('inside orientation 2', comparison, price);
+  // if (comparison > price && comparison > 1) {
+  if (comparison > price) {
     console.log('inside orientation 3');
+    // If the number is really large (like 10k+) then dont say the precision of the last 3 digits
+    if (comparison > 10000) {comparison = 'about ' + parseInt(comparison/1000) * 1000;} 
     return 'Let me phrase it this way: One ' + prettyCoinB + ' is worth ' + comparison + ' ' + prettyCoinA + 's';
   } else {
     console.log('inside orientation 4');
@@ -118,9 +125,14 @@ function orientation(prettyCoinA, prettyCoinB, price) {
 
 
 function evalStatement(response, intent) {
-  var coinA = intent.slots.CoinA;
-  var coinB = intent.slots.CoinB;
-  var prefixUtterence = '';
+  var coinA = {},
+      coinB = {},
+      prefixUtterence = '';
+      
+  if (intent && "slots" in intent) {
+    coinA = intent.slots.CoinA;
+    coinB = intent.slots.CoinB;
+  }
   console.log('+++slots:', coinA, coinB);
 
   // Verify each coin is declared
@@ -157,6 +169,10 @@ function evalStatement(response, intent) {
 
     // If the number is -1, that means the API returned null. Meaning no exchange
     if (parseInt(prettyNumber) == -1) {
+      // Failsafe to make sure coinA and coinB is not undefined.
+      prettyCoinA === undefined ? prettyCoinA = 'that coin' : false;
+      prettyCoinB === undefined ? prettyCoinB = 'this coin' : false;
+
       phrase = 'Unfortunately I do not have an exchange for ' + prettyCoinA + 
         ' to ' + prettyCoinB + '. I could estimate, however cryptocurrency is hardly ever at equilibrium'
     }
@@ -187,39 +203,3 @@ exports.handler = function (event, context) {
   var fact = new Fact();
   fact.execute(event, context);
 };
-
-
-
-
-
-
-  // // CREATE ITEM
-  // var putDBItem = {
-  //   TableName: 'cointrack_cache',
-  //   Item: {
-  //     prices: "BTC_USD",
-  //     value: 710.01028,
-  //     time: Date.now()
-  //   }
-  // }
-  
-  // var putDBCB = function (err, data) {
-  //   response.tell("woohoo " + JSON.stringify(data) + ". error? " + JSON.stringify(err))
-  // };
-
-
-
-
-  // // GET ITEM
-  // var getDBItem = {
-  //   TableName : 'cointrack_cache',
-  //   Key: {
-  //      prices: "BTC_USD"
-  //   }
-  // }
-  // var getDBCB = function (err, data) {
-  //   response.tell("woohoo " + JSON.stringify(data) + ". error? " + JSON.stringify(err))
-  // };
-
-  // // dynamodb.put(putDBItem, putDBCB);
-  // dynamodb.get(getDBItem, getDBCB);
